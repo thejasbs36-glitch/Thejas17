@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}Student Login | College Portal{% endblock %}
+{% block nav %}
+<nav class="gov-nav"><div class="nav-inner">
+  <a href="/"><i class="fas fa-home"></i> Home</a>
+  <a href="/student/register"><i class="fas fa-user-plus"></i> Register</a>
+  <a href="/teacher/login"><i class="fas fa-chalkboard-teacher"></i> Teacher Login</a>
+  <a href="/principal/login"><i class="fas fa-user-tie"></i> Principal Login</a>
+</div></nav>
+{% endblock %}
+{% block content %}
+<div class="main-content" style="max-width:480px; margin:0 auto;">
+  <div style="text-align:center; margin-bottom:24px;">
+    <div style="font-size:56px; margin-bottom:10px;">🎓</div>
+    <h2 style="font-family:'EB Garamond',serif; font-size:28px; color:var(--navy);">Student Login</h2>
+    <p style="color:var(--gray-500); font-size:14px;">Access your complaint portal</p>
+  </div>
+  <div class="card">
+    <div class="card-header"><i class="fas fa-lock"></i> Secure Student Login</div>
+    <div class="card-body">
+      <form method="POST">
+        <div class="form-group"><label class="form-label">Student ID / Enrollment No.</label>
+          <input type="text" name="student_id" class="form-control" placeholder="e.g. BCA2024001" required autofocus></div>
+        <div class="form-group"><label class="form-label">Password</label>
+          <input type="password" name="password" class="form-control" required></div>
+        <button type="submit" class="btn btn-primary" style="width:100%; justify-content:center; padding:13px; margin-top:8px;">
+          <i class="fas fa-sign-in-alt"></i> Login to Portal
+        </button>
+      </form>
+      <div style="text-align:center; margin-top:18px;">
+        <p style="font-size:14px; color:var(--gray-500);">New student? <a href="/student/register" style="color:var(--navy); font-weight:700;">Register here</a></p>
+        <p style="font-size:12px; color:var(--gray-500); margin-top:8px;">Registration requires Principal approval</p>
+      </div>
+    </div>
+  </div>
+  <div style="text-align:center; margin-top:16px; font-size:13px; color:var(--gray-500);">
+    <a href="/teacher/login">Teacher?</a> &nbsp;|&nbsp; <a href="/principal/login">Principal?</a>
+  </div>
+</div>
+{% endblock %}

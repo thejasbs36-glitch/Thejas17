@@ -1,0 +1,349 @@
+{% extends "base.html" %}
+{% block title %}Principal Dashboard | College Portal{% endblock %}
+{% block nav %}
+<nav class="gov-nav"><div class="nav-inner">
+  <a href="/principal/dashboard" class="active"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+  <a href="/infrastructure"><i class="fas fa-building"></i> Infrastructure</a>
+  <a href="/principal/logout" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</a>
+</div></nav>
+{% endblock %}
+{% block content %}
+<div class="main-content">
+  <div class="page-title">
+    <div class="icon"><i class="fas fa-user-tie"></i></div>
+    <div><h2>Principal Dashboard</h2><div class="subtitle">Welcome, {{ session.name }} | Administrative Control Panel</div></div>
+  </div>
+
+  <!-- STATS -->
+  <div class="stats-grid">
+    <div class="stat-card"><div class="stat-number">{{ all_students|length }}</div><div class="stat-label">Approved Students</div></div>
+    <div class="stat-card" style="border-top-color:var(--danger);"><div class="stat-number">{{ pending_students|length }}</div><div class="stat-label">Pending Approvals</div></div>
+    <div class="stat-card" style="border-top-color:#e67e22;"><div class="stat-number">{{ pending_over_6h|length }}</div><div class="stat-label">⚠ Over 6hr Pending</div></div>
+    <div class="stat-card" style="border-top-color:var(--success);"><div class="stat-number">{{ all_complaints|selectattr('status','eq','Resolved')|list|length }}</div><div class="stat-label">Resolved</div></div>
+    <div class="stat-card" style="border-top-color:#8e44ad;"><div class="stat-number">{{ infra|length }}</div><div class="stat-label">Infra Records</div></div>
+  </div>
+
+  {% if pending_over_6h %}
+  <div class="alert-banner">
+    <i class="fas fa-exclamation-triangle"></i>
+    ALERT: {{ pending_over_6h|length }} complaint(s) have NOT been resolved within the 6-hour SLA! Send orders to teachers immediately.
+  </div>
+  {% endif %}
+
+  {% if pending_students %}
+  <div class="alert-banner" style="background:#e67e22;">
+    <i class="fas fa-user-clock"></i>
+    {{ pending_students|length }} student registration(s) are awaiting your approval.
+  </div>
+  {% endif %}
+
+  <!-- TABS -->
+  <div class="tab-container">
+    <div class="tab-nav">
+      <button class="tab-btn active" onclick="openTab(event,'p-tab-pending')">
+        <i class="fas fa-exclamation-circle" style="color:var(--danger);"></i> SLA Alerts
+        {% if pending_over_6h %}<span style="background:var(--danger);color:white;border-radius:10px;padding:1px 8px;font-size:11px;margin-left:4px;">{{ pending_over_6h|length }}</span>{% endif %}
+      </button>
+      <button class="tab-btn" onclick="openTab(event,'p-tab-students')">
+        <i class="fas fa-users"></i> Student Approval
+        {% if pending_students %}<span style="background:#e67e22;color:white;border-radius:10px;padding:1px 8px;font-size:11px;margin-left:4px;">{{ pending_students|length }}</span>{% endif %}
+      </button>
+      <button class="tab-btn" onclick="openTab(event,'p-tab-all')"><i class="fas fa-list-alt"></i> All Complaints</button>
+      <button class="tab-btn" onclick="openTab(event,'p-tab-orders')"><i class="fas fa-envelope"></i> Orders & Responses</button>
+      <button class="tab-btn" onclick="openTab(event,'p-tab-infra')"><i class="fas fa-building"></i> Infrastructure</button>
+    </div>
+
+    <!-- SLA ALERTS TAB -->
+    <div id="p-tab-pending" class="tab-content active">
+
+      <!-- EXPLANATION BOX -->
+      <div style="background:#fff8e1; border:1px solid #ffc107; border-radius:6px; padding:14px 18px; margin-top:20px; margin-bottom:16px; font-size:13.5px; color:#5d4037; display:flex; gap:12px; align-items:flex-start;">
+        <i class="fas fa-info-circle" style="color:#f57c00; font-size:18px; margin-top:2px; flex-shrink:0;"></i>
+        <div>
+          <strong>SLA Rule:</strong> If a teacher has <strong>not updated</strong> (resolved or responded to) a complaint within <strong>6 hours</strong> of submission, it appears here.
+          Principal can send a written <strong>Order/Directive</strong> to the teacher. The teacher must respond to that order from their dashboard.
+          Once resolved, the complaint automatically disappears from this alert list.
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header warning-header">
+          <i class="fas fa-clock"></i> Overdue Complaints — Teacher Not Updated Within 6 Hours
+          <span class="badge" style="background:white; color:var(--danger);">{{ pending_over_6h|length }}</span>
+        </div>
+        {% if overdue_with_hours %}
+        <div style="overflow-x:auto;">
+          <table class="gov-table">
+            <thead><tr>
+              <th>#</th>
+              <th>Student ID</th>
+              <th>Student Name</th>
+              <th>Branch</th>
+              <th>Room No.</th>
+              <th>Issue Description</th>
+              <th>Photo</th>
+              <th>Submitted At</th>
+              <th>Hours Elapsed</th>
+              <th>Current Status</th>
+              <th>Order Already Sent?</th>
+              <th>Send Order to Teacher</th>
+            </tr></thead>
+            <tbody>
+            {% for item in overdue_with_hours %}
+            {% set c = item.complaint %}
+            {% set hrs = item.hours %}
+            {% set order_sent = [] %}
+            {% for o in orders %}{% if o.complaint_id == c.id %}{% set _ = order_sent.append(o) %}{% endif %}{% endfor %}
+            <tr style="{% if hrs > 12 %}background:#fff0f0;{% elif hrs > 6 %}background:#fffbf0;{% endif %}">
+              <td>{{ loop.index }}</td>
+              <td><strong style="color:var(--navy);">{{ c.student_id }}</strong></td>
+              <td>{{ c.student_name }}</td>
+              <td>{{ c.branch }}</td>
+              <td><strong>{{ c.room_number }}</strong></td>
+              <td style="max-width:200px; font-size:13px; line-height:1.4;">{{ c.issue_description[:90] }}{% if c.issue_description|length > 90 %}...{% endif %}</td>
+              <td>
+                {% if c.photo_path %}
+                <img src="/static/uploads/{{ c.photo_path }}" class="complaint-photo" onclick="showPhoto('/static/uploads/{{ c.photo_path }}')" title="View Photo">
+                {% else %}<span style="color:var(--gray-300);">—</span>{% endif %}
+              </td>
+              <td style="font-size:12px; color:var(--gray-500);">{{ c.date_submitted[:16] }}</td>
+              <td>
+                <span style="
+                  display:inline-block; padding:4px 10px; border-radius:20px; font-weight:700; font-size:12px;
+                  background:{% if hrs > 12 %}#ffcccc{% elif hrs > 6 %}#fff3cd{% else %}#d4edda{% endif %};
+                  color:{% if hrs > 12 %}#c0392b{% elif hrs > 6 %}#856404{% else %}#155724{% endif %};
+                  border:1px solid {% if hrs > 12 %}#c0392b{% elif hrs > 6 %}#ffc107{% else %}#28a745{% endif %};">
+                  ⏱ {{ hrs }}h
+                </span>
+              </td>
+              <td>
+                <span class="status-badge status-{{ c.status|lower|replace(' ','-') }}">{{ c.status }}</span>
+              </td>
+              <td style="text-align:center;">
+                {% if order_sent %}
+                  <span style="color:var(--success); font-size:12px; font-weight:700;">
+                    <i class="fas fa-check-circle"></i> Sent<br>
+                    <span style="color:var(--gray-500); font-weight:400;">{{ order_sent|length }} order(s)</span>
+                  </span>
+                {% else %}
+                  <span style="color:var(--gray-300); font-size:12px;">Not yet</span>
+                {% endif %}
+              </td>
+              <td>
+                <button class="btn btn-sm btn-danger" onclick="openOrderModal({{ c.id }}, '{{ c.student_name }}', '{{ c.room_number }}', '{{ c.branch }}')">
+                  <i class="fas fa-paper-plane"></i> Send Order
+                </button>
+              </td>
+            </tr>
+            {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <div style="padding:40px; text-align:center; color:var(--gray-500);">
+          <i class="fas fa-check-circle" style="font-size:48px; color:var(--success); display:block; margin-bottom:14px;"></i>
+          <strong style="font-size:16px; color:var(--navy);">All complaints are within SLA!</strong>
+          <p style="margin-top:8px; font-size:14px;">No teacher has exceeded the 6-hour response limit. All is well.</p>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- STUDENT APPROVAL TAB -->
+    <div id="p-tab-students" class="tab-content">
+      <div class="card" style="margin-top:20px;">
+        <div class="card-header"><i class="fas fa-user-check"></i> Pending Student Registrations<span class="badge">{{ pending_students|length }}</span></div>
+        {% if pending_students %}
+        <div style="overflow-x:auto;">
+          <table class="gov-table">
+            <thead><tr><th>#</th><th>Student ID</th><th>Name</th><th>Branch</th><th>Email</th><th>Registered At</th><th>Action</th></tr></thead>
+            <tbody>
+            {% for s in pending_students %}
+            <tr>
+              <td>{{ loop.index }}</td>
+              <td><strong>{{ s.student_id }}</strong></td>
+              <td>{{ s.name }}</td>
+              <td>{{ s.branch }}</td>
+              <td>{{ s.email }}</td>
+              <td>{{ s.created_at[:16] }}</td>
+              <td>
+                <form method="POST" action="/principal/approve_student/{{ s.id }}" style="display:inline;">
+                  <button type="submit" class="btn btn-sm btn-success"><i class="fas fa-check"></i> Approve</button>
+                </form>
+                <form method="POST" action="/principal/reject_student/{{ s.id }}" style="display:inline;" onsubmit="return confirm('Reject this registration?')">
+                  <button type="submit" class="btn btn-sm btn-danger"><i class="fas fa-times"></i> Reject</button>
+                </form>
+              </td>
+            </tr>
+            {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <div style="padding:30px; text-align:center; color:var(--gray-500);">No pending registrations.</div>
+        {% endif %}
+      </div>
+
+      <!-- APPROVED STUDENTS -->
+      <div class="card" style="margin-top:20px;">
+        <div class="card-header"><i class="fas fa-users"></i> Approved Students<span class="badge">{{ all_students|length }}</span></div>
+        <div style="overflow-x:auto;">
+          {% if all_students %}
+          <table class="gov-table">
+            <thead><tr><th>#</th><th>Student ID</th><th>Name</th><th>Branch</th><th>Email</th></tr></thead>
+            <tbody>
+            {% for s in all_students %}
+            <tr><td>{{ loop.index }}</td><td><strong>{{ s.student_id }}</strong></td><td>{{ s.name }}</td><td>{{ s.branch }}</td><td>{{ s.email }}</td></tr>
+            {% endfor %}
+            </tbody>
+          </table>
+          {% else %}
+          <div style="padding:20px; text-align:center; color:var(--gray-500);">No approved students yet.</div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- ALL COMPLAINTS TAB -->
+    <div id="p-tab-all" class="tab-content">
+      <div class="card" style="margin-top:20px;">
+        <div class="card-header"><i class="fas fa-clipboard-list"></i> All Complaints<span class="badge">{{ all_complaints|length }}</span></div>
+        <div style="overflow-x:auto;">
+          <table class="gov-table">
+            <thead><tr><th>#</th><th>Student ID</th><th>Name</th><th>Branch</th><th>Room</th><th>Date</th><th>Issue</th><th>Photo</th><th>Status</th><th>Updated Photo</th><th>Teacher Response</th></tr></thead>
+            <tbody>
+            {% for c in all_complaints %}
+            <tr>
+              <td>{{ loop.index }}</td>
+              <td><strong>{{ c.student_id }}</strong></td>
+              <td>{{ c.student_name }}</td>
+              <td>{{ c.branch }}</td>
+              <td>{{ c.room_number }}</td>
+              <td>{{ c.date_submitted[:10] }}</td>
+              <td style="max-width:180px; font-size:13px;">{{ c.issue_description[:60] }}...</td>
+              <td>{% if c.photo_path %}<img src="/static/uploads/{{ c.photo_path }}" class="complaint-photo" onclick="showPhoto('/static/uploads/{{ c.photo_path }}')">{% else %}—{% endif %}</td>
+              <td><span class="status-badge status-{{ c.status|lower|replace(' ','-') }}">{{ c.status }}</span></td>
+              <td>{% if c.updated_photo %}<img src="/static/uploads/{{ c.updated_photo }}" class="complaint-photo" onclick="showPhoto('/static/uploads/{{ c.updated_photo }}')">{% else %}—{% endif %}</td>
+              <td style="font-size:13px; color:var(--gray-500);">{{ c.teacher_response or '—' }}</td>
+            </tr>
+            {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ORDERS TAB -->
+    <div id="p-tab-orders" class="tab-content">
+      <div class="card" style="margin-top:20px;">
+        <div class="card-header"><i class="fas fa-envelope-open-text"></i> Principal Orders & Teacher Responses</div>
+        {% if orders %}
+        <div style="overflow-x:auto;">
+          <table class="gov-table">
+            <thead><tr><th>#</th><th>Student ID</th><th>Student Name</th><th>Room</th><th>Issue</th><th>Order Sent</th><th>Sent At</th><th>Teacher Response</th><th>Responded At</th></tr></thead>
+            <tbody>
+            {% for o in orders %}
+            <tr>
+              <td>{{ loop.index }}</td>
+              <td>{{ o.student_id }}</td>
+              <td>{{ o.student_name }}</td>
+              <td>{{ o.room_number }}</td>
+              <td style="font-size:13px; max-width:160px;">{{ o.issue_description[:50] }}...</td>
+              <td style="color:var(--danger); font-weight:600; font-size:13px;">{{ o.order_text }}</td>
+              <td>{{ o.sent_at[:16] }}</td>
+              <td style="font-size:13px; color:var(--success); font-weight:600;">{{ o.teacher_response or '⏳ Awaiting...' }}</td>
+              <td style="font-size:12px; color:var(--gray-500);">{{ o.responded_at[:16] if o.responded_at else '—' }}</td>
+            </tr>
+            {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <div style="padding:30px; text-align:center; color:var(--gray-500);">No orders sent yet.</div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- INFRASTRUCTURE TAB -->
+    <div id="p-tab-infra" class="tab-content">
+      <div class="card" style="margin-top:20px;">
+        <div class="card-header"><i class="fas fa-building"></i> Infrastructure Overview — All Branches</div>
+        {% if infra %}
+        {% for branch in ['BCA','BBA','BSC','Data Science','BVOC DSW'] %}
+          {% set branch_rooms = infra|selectattr('branch','eq',branch)|list %}
+          {% if branch_rooms %}
+          <div style="background:var(--navy); color:white; padding:10px 20px; font-weight:700; font-size:14px;">
+            <i class="fas fa-layer-group"></i> {{ branch }} — {{ branch_rooms|length }} Room(s)
+          </div>
+          <table class="gov-table">
+            <thead><tr><th>Room</th><th>Benches</th><th>Computers</th><th>Projector</th><th>Fans</th><th>Fan Status</th><th>Electrical</th><th>Windows</th><th>Window Cond.</th><th>Updated By</th></tr></thead>
+            <tbody>
+            {% for r in branch_rooms %}
+            <tr>
+              <td><strong>{{ r.room_number }}</strong></td>
+              <td>{{ r.num_benches }}</td><td>{{ r.num_computers }}</td>
+              <td>{% if r.projector=='Yes' %}<span class="status-badge status-resolved">Yes</span>{% else %}<span class="status-badge status-pending">No</span>{% endif %}</td>
+              <td>{{ r.num_fans }}</td>
+              <td><span class="status-badge {% if r.fan_status=='Working' %}status-resolved{% else %}status-pending{% endif %}">{{ r.fan_status }}</span></td>
+              <td><span class="status-badge {% if r.electrical_status=='Good' %}status-resolved{% else %}status-pending{% endif %}">{{ r.electrical_status }}</span></td>
+              <td>{{ r.num_windows }}</td>
+              <td><span class="status-badge {% if r.window_condition=='Good' %}status-resolved{% else %}status-pending{% endif %}">{{ r.window_condition }}</span></td>
+              <td style="font-size:12px;">{{ r.updated_by or '—' }}</td>
+            </tr>
+            {% endfor %}
+            </tbody>
+          </table>
+          {% endif %}
+        {% endfor %}
+        {% else %}
+        <div style="padding:30px; text-align:center; color:var(--gray-500);">No infrastructure records.</div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ORDER MODAL -->
+<div class="modal" id="orderModal">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeModal('orderModal')">✕</button>
+    <h3><i class="fas fa-paper-plane" style="color:var(--danger);"></i> Send Order to Teacher</h3>
+    <div id="orderContext" style="background:var(--gray-50); border-radius:4px; padding:12px 14px; margin-bottom:16px; font-size:13px; color:var(--gray-700); border-left:4px solid var(--danger);">
+    </div>
+    <form method="POST" id="orderForm">
+      <div class="form-group">
+        <label class="form-label">Order / Directive to Teacher *</label>
+        <textarea name="order_text" class="form-control" rows="4"
+          placeholder="e.g. This complaint has exceeded 6 hours SLA. Please resolve the fan issue in Room 101 immediately and update the status within 2 hours." required></textarea>
+      </div>
+      <div style="font-size:12px; color:var(--gray-500); margin-bottom:14px;">
+        <i class="fas fa-info-circle"></i> The teacher will see this order on their dashboard and must respond to it.
+      </div>
+      <button type="submit" class="btn btn-danger"><i class="fas fa-paper-plane"></i> Send Order to Teacher</button>
+      <button type="button" class="btn btn-outline" onclick="closeModal('orderModal')" style="margin-left:8px;">Cancel</button>
+    </form>
+  </div>
+</div>
+
+<!-- PHOTO MODAL -->
+<div class="modal" id="photoModal">
+  <div class="modal-box" style="max-width:700px; padding:12px;">
+    <button class="modal-close" onclick="closeModal('photoModal')">✕</button>
+    <img id="modalPhoto" src="" style="width:100%; border-radius:4px; margin-top:20px;">
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+function showPhoto(src) { document.getElementById('modalPhoto').src=src; openModal('photoModal'); }
+function openOrderModal(cid, studentName, room, branch) {
+  document.getElementById('orderForm').action = '/principal/send_order/' + cid;
+  document.getElementById('orderContext').innerHTML =
+    '<strong>Complaint Details:</strong><br>' +
+    '👤 Student: <strong>' + studentName + '</strong> &nbsp;|&nbsp; ' +
+    '🏫 Room: <strong>' + room + '</strong> &nbsp;|&nbsp; ' +
+    '📚 Branch: <strong>' + branch + '</strong>';
+  openModal('orderModal');
+}
+</script>
+{% endblock %}

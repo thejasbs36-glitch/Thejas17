@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}Principal Login | College Portal{% endblock %}
+{% block nav %}
+<nav class="gov-nav"><div class="nav-inner">
+  <a href="/"><i class="fas fa-home"></i> Home</a>
+  <a href="/student/login"><i class="fas fa-graduation-cap"></i> Student Login</a>
+  <a href="/teacher/login"><i class="fas fa-chalkboard-teacher"></i> Teacher Login</a>
+</div></nav>
+{% endblock %}
+{% block content %}
+<div class="main-content" style="max-width:480px; margin:0 auto;">
+  <div style="text-align:center; margin-bottom:24px;">
+    <div style="font-size:56px; margin-bottom:10px;">🏛️</div>
+    <h2 style="font-family:'EB Garamond',serif; font-size:28px; color:var(--navy);">Principal Login</h2>
+    <p style="color:var(--gray-500); font-size:14px;">Administrative Head — Restricted Access</p>
+  </div>
+  <div class="card">
+    <div class="card-header" style="background:var(--danger);"><i class="fas fa-shield-alt"></i> High-Security Administrator Login</div>
+    <div class="card-body">
+      <div style="background:#d1ecf1; border:1px solid #17a2b8; border-radius:4px; padding:10px 14px; margin-bottom:16px; font-size:13px; color:#0c5460;">
+        <i class="fas fa-info-circle"></i> Default — username: <strong>principal</strong> | password: <strong>principal123</strong>
+      </div>
+      <form method="POST">
+        <div class="form-group"><label class="form-label">Username</label>
+          <input type="text" name="username" class="form-control" required autofocus></div>
+        <div class="form-group"><label class="form-label">Password</label>
+          <input type="password" name="password" class="form-control" required></div>
+        <button type="submit" class="btn btn-danger" style="width:100%; justify-content:center; padding:13px;">
+          <i class="fas fa-sign-in-alt"></i> Login as Principal
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

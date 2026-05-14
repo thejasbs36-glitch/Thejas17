@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+{% block title %}Student Dashboard | College Portal{% endblock %}
+{% block nav %}
+<nav class="gov-nav"><div class="nav-inner">
+  <a href="/student/dashboard" class="active"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+  <a href="/student/complaint/submit"><i class="fas fa-plus-circle"></i> Submit Complaint</a>
+  <a href="/infrastructure"><i class="fas fa-building"></i> Infrastructure</a>
+  <a href="/student/logout" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</a>
+</div></nav>
+{% endblock %}
+{% block content %}
+<div class="main-content">
+  <div class="page-title">
+    <div class="icon"><i class="fas fa-graduation-cap"></i></div>
+    <div><h2>Student Dashboard</h2><div class="subtitle">Welcome, {{ session.name }} | ID: {{ session.student_id }}</div></div>
+  </div>
+
+  <!-- STATS -->
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-number">{{ complaints|length }}</div>
+      <div class="stat-label">Total Complaints</div>
+    </div>
+    <div class="stat-card" style="border-top-color:#e67e22;">
+      <div class="stat-number">{{ complaints|selectattr('status','eq','Pending')|list|length }}</div>
+      <div class="stat-label">Pending</div>
+    </div>
+    <div class="stat-card" style="border-top-color:var(--success);">
+      <div class="stat-number">{{ complaints|selectattr('status','eq','Resolved')|list|length }}</div>
+      <div class="stat-label">Resolved</div>
+    </div>
+    <div class="stat-card" style="border-top-color:#3498db;">
+      <div class="stat-number">{{ complaints|selectattr('status','eq','In Progress')|list|length }}</div>
+      <div class="stat-label">In Progress</div>
+    </div>
+  </div>
+
+  <!-- QUICK ACTION -->
+  <div style="margin-bottom:24px;">
+    <a href="/student/complaint/submit" class="btn btn-primary"><i class="fas fa-plus"></i> New Complaint</a>
+    &nbsp;
+    <button onclick="copyShareLink()" class="btn btn-outline"><i class="fas fa-share-alt"></i> Share Registration Link</button>
+  </div>
+
+  <!-- COMPLAINTS TABLE -->
+  <div class="card">
+    <div class="card-header">
+      <i class="fas fa-list-alt"></i> My Complaints
+      <span class="badge">{{ complaints|length }}</span>
+    </div>
+    <div class="card-body" style="padding:0; overflow-x:auto;">
+      {% if complaints %}
+      <table class="gov-table">
+        <thead><tr>
+          <th>#</th><th>Date</th><th>Room</th><th>Branch</th>
+          <th>Issue (Summary)</th><th>Photo</th><th>Status</th><th>Teacher Response</th>
+        </tr></thead>
+        <tbody>
+        {% for c in complaints %}
+        <tr>
+          <td>{{ loop.index }}</td>
+          <td>{{ c.date_submitted[:10] }}</td>
+          <td><strong>{{ c.room_number }}</strong></td>
+          <td>{{ c.branch }}</td>
+          <td style="max-width:220px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="{{ c.issue_description }}">{{ c.issue_description }}</td>
+          <td>
+            {% if c.photo_path %}
+            <img src="/static/uploads/{{ c.photo_path }}" class="complaint-photo" onclick="showPhoto('/static/uploads/{{ c.photo_path }}')" title="Click to enlarge">
+            {% else %}<span style="color:var(--gray-300);">—</span>{% endif %}
+          </td>
+          <td>
+            <span class="status-badge status-{{ c.status|lower|replace(' ','-') }}">{{ c.status }}</span>
+          </td>
+          <td style="max-width:180px; font-size:13px; color:var(--gray-500);">
+            {{ c.teacher_response or '—' }}
+          </td>
+        </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <div style="padding:40px; text-align:center; color:var(--gray-500);">
+        <i class="fas fa-inbox" style="font-size:40px; opacity:0.3; display:block; margin-bottom:12px;"></i>
+        No complaints submitted yet. <a href="/student/complaint/submit">Submit your first complaint.</a>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- PHOTO MODAL -->
+<div class="modal" id="photoModal">
+  <div class="modal-box" style="max-width:700px; padding:12px;">
+    <button class="modal-close" onclick="closeModal('photoModal')">✕</button>
+    <img id="modalPhoto" src="" style="width:100%; border-radius:4px; margin-top:20px;">
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+function showPhoto(src) { document.getElementById('modalPhoto').src=src; openModal('photoModal'); }
+function copyShareLink() {
+  navigator.clipboard.writeText(window.location.origin + '/student/register').then(() => alert('Registration link copied!'));
+}
+</script>
+{% endblock %}

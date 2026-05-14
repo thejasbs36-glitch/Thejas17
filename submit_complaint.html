@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% block title %}Submit Complaint | Student Portal{% endblock %}
+{% block nav %}
+<nav class="gov-nav"><div class="nav-inner">
+  <a href="/student/dashboard"><i class="fas fa-arrow-left"></i> Dashboard</a>
+  <a href="/student/complaint/submit" class="active"><i class="fas fa-plus"></i> Submit Complaint</a>
+  <a href="/student/logout" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</a>
+</div></nav>
+{% endblock %}
+{% block content %}
+<div class="main-content" style="max-width:700px; margin:0 auto;">
+  <div class="page-title">
+    <div class="icon"><i class="fas fa-file-alt"></i></div>
+    <div><h2>Submit Complaint</h2><div class="subtitle">File a new infrastructure or facility complaint</div></div>
+  </div>
+  <div class="card">
+    <div class="card-header"><i class="fas fa-edit"></i> Complaint Registration Form</div>
+    <div class="card-body">
+      <form method="POST" enctype="multipart/form-data">
+        <div class="grid-2">
+          <div class="form-group">
+            <label class="form-label">Student Name</label>
+            <input type="text" class="form-control" value="{{ student_name }}" readonly style="background:var(--gray-50);">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Date of Complaint</label>
+            <input type="text" class="form-control" id="complaintDate" readonly style="background:var(--gray-50);">
+          </div>
+        </div>
+        <div class="grid-2">
+          <div class="form-group">
+            <label class="form-label">Course / Branch *</label>
+            <select name="branch" class="form-control" required>
+              <option value="">-- Select Branch --</option>
+              <option>BCA</option><option>BBA</option><option>BSC</option>
+              <option>Data Science</option><option>BVOC DSW</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Room Number *</label>
+            <input type="text" name="room_number" class="form-control" placeholder="e.g. 101, Lab-A" required>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Issue Description *</label>
+          <textarea name="issue_description" class="form-control" placeholder="Describe the issue in detail — what is the problem, how long it has existed, severity etc." required style="min-height:120px;"></textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Upload Photo of Issue</label>
+          <input type="file" name="photo" class="form-control" accept="image/*" onchange="previewPhoto(this)">
+          <div id="photoPreview" style="margin-top:10px;display:none;">
+            <img id="previewImg" style="max-height:160px; border-radius:4px; border:2px solid var(--gray-300);">
+          </div>
+        </div>
+        <div style="background:var(--gray-50); border-radius:4px; padding:14px; margin-bottom:18px; font-size:13px; color:var(--gray-500);">
+          <i class="fas fa-info-circle" style="color:var(--saffron);"></i>
+          Your complaint will be reviewed by the teacher in charge. If not resolved within 6 hours, the Principal will be automatically notified.
+        </div>
+        <button type="submit" class="btn btn-primary" style="width:100%; justify-content:center; padding:13px;">
+          <i class="fas fa-paper-plane"></i> Submit Complaint
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+document.getElementById('complaintDate').value = new Date().toLocaleString('en-IN');
+function previewPhoto(input) {
+  if (input.files && input.files[0]) {
+    const reader = new FileReader();
+    reader.onload = e => {
+      document.getElementById('previewImg').src = e.target.result;
+      document.getElementById('photoPreview').style.display = 'block';
+    };
+    reader.readAsDataURL(input.files[0]);
+  }
+}
+</script>
+{% endblock %}

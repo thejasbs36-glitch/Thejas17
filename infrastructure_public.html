@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block title %}Infrastructure Records | College Portal{% endblock %}
+{% block nav %}
+<nav class="gov-nav"><div class="nav-inner">
+  <a href="/"><i class="fas fa-home"></i> Home</a>
+  <a href="/infrastructure" class="active"><i class="fas fa-building"></i> Infrastructure</a>
+  {% if session.get('role') %}
+  <a href="/{{ session.role }}/dashboard"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+  {% endif %}
+</div></nav>
+{% endblock %}
+{% block content %}
+<div class="main-content">
+  <div class="page-title">
+    <div class="icon"><i class="fas fa-building"></i></div>
+    <div><h2>Infrastructure Records</h2><div class="subtitle">Branch-wise facility and room inventory — publicly accessible</div></div>
+  </div>
+
+  {% if infra %}
+  {% for branch in ['BCA','BBA','BSC','Data Science','BVOC DSW'] %}
+    {% set branch_rooms = infra|selectattr('branch','eq',branch)|list %}
+    {% if branch_rooms %}
+    <div class="card" style="margin-bottom:28px;">
+      <div class="card-header">
+        <i class="fas fa-graduation-cap"></i> {{ branch }}
+        <span class="badge">{{ branch_rooms|length }} Rooms</span>
+      </div>
+      <div style="overflow-x:auto;">
+        <table class="gov-table">
+          <thead><tr>
+            <th>Room No.</th><th>Benches</th><th>Computers</th><th>Projector</th>
+            <th>Fans</th><th>Fan Status</th><th>Electrical</th><th>Windows</th>
+            <th>Window Condition</th><th>Last Updated By</th>
+          </tr></thead>
+          <tbody>
+          {% for r in branch_rooms %}
+          <tr>
+            <td><strong>{{ r.room_number }}</strong></td>
+            <td>{{ r.num_benches }}</td><td>{{ r.num_computers }}</td>
+            <td>{% if r.projector=='Yes' %}<span class="status-badge status-resolved">✓ Yes</span>{% else %}<span class="status-badge status-pending">✗ No</span>{% endif %}</td>
+            <td>{{ r.num_fans }}</td>
+            <td><span class="status-badge {% if r.fan_status=='Working' %}status-resolved{% else %}status-pending{% endif %}">{{ r.fan_status }}</span></td>
+            <td><span class="status-badge {% if r.electrical_status=='Good' %}status-resolved{% else %}status-pending{% endif %}">{{ r.electrical_status }}</span></td>
+            <td>{{ r.num_windows }}</td>
+            <td><span class="status-badge {% if r.window_condition=='Good' %}status-resolved{% else %}status-pending{% endif %}">{{ r.window_condition }}</span></td>
+            <td style="font-size:12px; color:var(--gray-500);">{{ r.updated_by or 'System' }}<br><span style="font-size:11px;">{{ r.updated_at[:10] if r.updated_at else '' }}</span></td>
+          </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    {% endif %}
+  {% endfor %}
+  {% else %}
+  <div class="card"><div class="card-body" style="text-align:center; padding:50px; color:var(--gray-500);">
+    <i class="fas fa-building" style="font-size:50px; opacity:0.2; display:block; margin-bottom:16px;"></i>
+    No infrastructure records added yet. Teachers can add records from the Teacher Dashboard.
+  </div></div>
+  {% endif %}
+</div>
+{% endblock %}
